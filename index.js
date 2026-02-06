@@ -163,3 +163,10 @@ app.post("/psicotrading/broker", (req, res) => {
     pregunta
   });
 });
+function obtenerContexto({ tipo, entidad }) {
+  if (tipo === "publico") return PUBLIC_PROFILE;
+  if (tipo === "empresa") return EMPRESA_BASE;
+  if (tipo === "broker" && BROKERS[entidad]) return BROKERS[entidad];
+
+  return PUBLIC_PROFILE; // fallback seguro
+}
