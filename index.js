@@ -53,3 +53,63 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor activo en puerto", PORT);
 });
+/**
+ * ===============================
+ * PLANTILLA BROKER
+ * Psicotrading adaptado a empresa
+ * ===============================
+ */
+
+const BROKERS = {
+  daxlover: {
+    nombre: "DAX Lover",
+    regulacion: "Broker europeo regulado",
+    enfoque: "trading intradía DAX",
+    normas: [
+      "No es asesoramiento financiero",
+      "Respeta las reglas del broker",
+      "Gestión del riesgo obligatoria",
+      "Disciplina emocional prioritaria"
+    ],
+    estilo_respuesta: "directo, profesional, enfocado a resultados"
+  },
+
+  forexfactory: {
+    nombre: "Forex Factory",
+    regulacion: "Broker internacional",
+    enfoque: "forex y noticias macro",
+    normas: [
+      "No promesas de rentabilidad",
+      "Control emocional ante noticias",
+      "Evitar sobreoperar",
+      "Gestión de riesgo estricta"
+    ],
+    estilo_respuesta: "analítico, calmado, educativo"
+  }
+};
+
+/**
+ * Endpoint BROKER
+ * El avatar responde adaptado al broker
+ */
+app.post("/psicotrading/broker", (req, res) => {
+  const { broker, pregunta, usuario } = req.body;
+
+  const brokerConfig = BROKERS[broker];
+
+  if (!brokerConfig) {
+    return res.status(404).json({
+      error: "Broker no reconocido"
+    });
+  }
+
+  res.json({
+    perfil: "broker",
+    broker: brokerConfig.nombre,
+    enfoque: brokerConfig.enfoque,
+    normas: brokerConfig.normas,
+    estilo: brokerConfig.estilo_respuesta,
+    usuario: usuario || "anónimo",
+    pregunta
+  });
+});
