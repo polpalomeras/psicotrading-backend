@@ -39,6 +39,21 @@ app.get("/", (req, res) => {
  */
 app.post("/psicotrading/public", (req, res) => {
   const { pregunta, usuario } = req.body;
+app.post("/psicotrading/empresa", (req, res) => {
+  const { pregunta, usuario, empresa } = req.body;
+
+  res.json({
+    perfil: "empresa",
+    empresa: empresa || EMPRESA_BASE.nombre,
+    enfoque: EMPRESA_BASE.enfoque,
+    normas: EMPRESA_BASE.normas_legales,
+    tono: EMPRESA_BASE.tono_respuesta,
+    usuario: usuario || "corporativo",
+    pregunta,
+    respuesta_simulada:
+      "Respuesta de psicotrading adaptada a entorno corporativo, gestión emocional de equipos y control del riesgo."
+  });
+});
 
   res.json({
     perfil: PUBLIC_PROFILE.tipo,
@@ -53,6 +68,41 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor activo en puerto", PORT);
 });
+/**
+ * ============================
+ * PLANTILLA EMPRESA
+ * Marco superior corporativo
+ * ============================
+ */
+
+const EMPRESA_BASE = {
+  tipo: "empresa",
+  nombre: "Empresa genérica psicotrading",
+  ambito: "trading y mercados financieros",
+  rol_avatar: "psicólogo digital corporativo",
+
+  normas_legales: [
+    "No es asesoramiento financiero",
+    "No se dan señales de trading",
+    "No se recomienda invertir capital",
+    "Contenido educativo y psicológico"
+  ],
+
+  enfoque_psicologico: [
+    "gestión emocional",
+    "disciplina",
+    "control del riesgo",
+    "procesos mentales del trader"
+  ],
+
+  tono_respuesta: "profesional, claro, calmado, corporativo",
+
+  limites: {
+    señales: false,
+    recomendacion_activos: false,
+    gestion_cuentas: false
+  }
+};
 /**
  * ===============================
  * PLANTILLA BROKER
