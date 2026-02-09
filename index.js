@@ -48,6 +48,27 @@ app.post("/psicotrading/public", (req, res) => {
       "Respuesta de psicotrading general basada en disciplina, gestión emocional y control del riesgo."
   });
 });
+/**
+ * Endpoint CONTEXTO UNIFICADO
+ * Decide si es público, empresa o broker
+ */
+app.post("/psicotrading/contexto", (req, res) => {
+  const { tipo, entidad, usuario, pregunta } = req.body;
+
+  const contexto = obtenerContexto({ tipo, entidad });
+
+  res.json({
+    perfil: tipo,
+    entidad: entidad || "general",
+    enfoque: contexto.enfoque,
+    normas: contexto.normas || contexto.normas_legales,
+    estilo: contexto.estilo_respuesta || contexto.tono_respuesta,
+    usuario: usuario || "anónimo",
+    pregunta,
+    respuesta_simulada:
+      "Respuesta generada según contexto psicológico y normativo seleccionado."
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
