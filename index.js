@@ -1,147 +1,116 @@
 import express from "express";
+import OpenAI from "openai";
 
 const app = express();
 app.use(express.json());
 
-/**
- * =========================
- * PERFILES / CONTEXTOS
- * =========================
- */
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+/* =========================
+   CONTEXTOS BASE
+========================= */
 
 const PUBLIC_PROFILE = {
   tipo: "publico",
-  enfoque: "psicotrading_general",
-  normas: [
-    "No es asesoramiento financiero",
-    "Enfoque psicológico y emocional",
-    "Gestión del riesgo y disciplina"
-  ],
-  estilo_respuesta: "claro, empático, educativo"
+  enfoque: "psicotrading general",
+  normas: ["No es asesoramiento financiero"],
+  estilo_respuesta: "claro, empático, educativo",
 };
 
 const EMPRESA_BASE = {
   tipo: "empresa",
-  nombre: "Empresa Corporativa",
-  enfoque: "psicotrading_corporativo",
+  enfoque: "psicotrading corporativo",
   normas_legales: [
     "No es asesoramiento financiero",
-    "Cumple normativa interna",
-    "Contenido educativo y psicológico"
+    "Uso interno corporativo",
   ],
-  tono_respuesta: "profesional, claro, corporativo"
+  tono_respuesta: "profesional, claro, corporativo",
 };
 
 const BROKERS = {
   daxlover: {
-    tipo: "broker",
     nombre: "DAX Lover",
     enfoque: "trading intradía DAX",
     normas: [
-      "Respeta reglas del broker",
-      "Disciplina estricta",
-      "Gestión emocional prioritaria"
+      "Respeta las reglas del broker",
+      "No promesas de rentabilidad",
     ],
-    estilo_respuesta: "directo, profesional"
-  }
+    estilo_respuesta: "directo, profesional, enfocado a disciplina",
+  },
 };
 
-/**
- * =========================
- * FUNCION CONTEXTO
- * =========================
- */
+/* =========================
+   HELPERS
+========================= */
 
 function obtenerContexto({ tipo, entidad }) {
-  if (tipo === "publico") return PUBLIC_PROFILE;
   if (tipo === "empresa") return EMPRESA_BASE;
   if (tipo === "broker" && BROKERS[entidad]) return BROKERS[entidad];
   return PUBLIC_PROFILE;
 }
 
-/**
- * =========================
- * HEALTHCHECK
- * =========================
- */
+function construirPrompt({ contexto, pregunta }) {
+  return `
+Eres un psicólogo experto en trading.
 
-app.get("/", (req, res) => {
-  res.json({
-    status: "ok",
-    service: "psicotrading-backend",
-    message: "Backend activo 🚀"
-  });
+Contexto:
+- Enfoque: ${contexto.enfoque}
+- Normativa: ${(contexto.normas || contexto.normas_legales || []).join(", ")}
+- Estilo: ${contexto.estilo_respuesta || contexto.tono_respuesta}
+
+Tarea:
+1. Genera una respuesta empática y clara (máx 3 frases) para decir en voz.
+2. Luego genera contenido estructurado con:
+   - resumen
+   - puntos_clave (lista)
+   - recursos (ejercicios o recomendaciones prácticas)
+
+Pregunta del usuario:
+"${pregunta}"
+
+Devuelve el resultado en JSON con:
+- respuesta_voz
+- respuesta_texto { resumen, puntos_clave, recursos }
+`;
+}
+
+/* =========================
+   ENDPOINT CONTEXTO GPT REAL
+========================= */
+
+app.post("/psicotrading/contexto", async (req, res) => {
+  try {
+    const { tipo, entidad, pregunta } = req.body;
+    const contexto = obtenerContexto({ tipo, entidad });
+
+    const prompt = construirPrompt({ contexto, pregunta });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const respuesta = JSON.parse(
+      completion.choices[0].message.content
+    );
+
+    res.json({
+      perfil: tipo,
+      entidad: entidad || "general",
+      ...respuesta,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error generando respuesta GPT" });
+  }
 });
 
-/**
- * =========================
- * ENDPOINT PUBLICO
- * =========================
- */
-
-app.post("/psicotrading/public", (req, res) => {
-  const { pregunta, usuario } = req.body;
-
-  res.json({
-    perfil: "publico",
-    usuario: usuario || "anónimo",
-    pregunta,
-    respuesta_voz:
-      "Entiendo cómo te sientes. Vamos a trabajar tu psicología de trading con calma y disciplina.",
-    respuesta_texto: {
-      resumen: "Psicotrading general",
-      puntos_clave: [
-        "Gestión emocional",
-        "Disciplina",
-        "Control del riesgo"
-      ]
-    }
-  });
-});
-
-/**
- * =========================
- * ENDPOINT CONTEXTO UNIFICADO
- * =========================
- */
-
-app.post("/psicotrading/contexto", (req, res) => {
-  const { tipo, entidad, usuario, pregunta } = req.body;
-  const contexto = obtenerContexto({ tipo, entidad });
-
-  res.json({
-    perfil: tipo,
-    entidad: entidad || "general",
-    enfoque: contexto.enfoque,
-    normas: contexto.normas || contexto.normas_legales,
-    estilo: contexto.estilo_respuesta || contexto.tono_respuesta,
-    usuario: usuario || "anónimo",
-    pregunta,
-    respuesta_voz:
-      "Vamos a analizar tu situación con enfoque psicológico y control emocional.",
-    respuesta_texto: {
-      resumen: "Análisis psicológico del contexto",
-      puntos_clave: [
-        "Autocontrol",
-        "Disciplina",
-        "Reducción de impulsividad"
-      ],
-      recursos: [
-        {
-          tipo: "ejercicio",
-          titulo: "Respiración previa a la entrada",
-          descripcion: "Respira 2 minutos antes de operar"
-        }
-      ]
-    }
-  });
-});
-
-/**
- * =========================
- * SERVER
- * =========================
- */
+/* =========================
+   SERVER
+========================= */
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
