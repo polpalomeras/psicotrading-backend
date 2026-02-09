@@ -39,28 +39,13 @@ app.get("/", (req, res) => {
  */
 app.post("/psicotrading/public", (req, res) => {
   const { pregunta, usuario } = req.body;
-app.post("/psicotrading/empresa", (req, res) => {
-  const { pregunta, usuario, empresa } = req.body;
-
-  res.json({
-    perfil: "empresa",
-    empresa: empresa || EMPRESA_BASE.nombre,
-    enfoque: EMPRESA_BASE.enfoque,
-    normas: EMPRESA_BASE.normas_legales,
-    tono: EMPRESA_BASE.tono_respuesta,
-    usuario: usuario || "corporativo",
-    pregunta,
-    respuesta_simulada:
-      "Respuesta de psicotrading adaptada a entorno corporativo, gestión emocional de equipos y control del riesgo."
-  });
-});
 
   res.json({
     perfil: PUBLIC_PROFILE.tipo,
     usuario: usuario || "anonimo",
     pregunta,
     respuesta_simulada:
-      "Respuesta de psicotrading general basada en disciplina, gestión emocional y control del riesgo.",
+      "Respuesta de psicotrading general basada en disciplina, gestión emocional y control del riesgo."
   });
 });
 
@@ -169,4 +154,32 @@ function obtenerContexto({ tipo, entidad }) {
   if (tipo === "broker" && BROKERS[entidad]) return BROKERS[entidad];
 
   return PUBLIC_PROFILE; // fallback seguro
+}
+function construirRespuestaC1({ contexto, pregunta, usuario }) {
+  return {
+    voice: `Gracias ${usuario || "trader"}. Según tu contexto (${contexto.tipo}), esta es mi recomendación.`,
+    
+    text: [
+      "Detecto un patrón emocional relacionado con la disciplina.",
+      "Te recomiendo aplicar una pausa estructurada antes de la siguiente operación."
+    ],
+
+    actions: [
+      "pausa_5_min",
+      "registro_emocional"
+    ],
+
+    links: [
+      {
+        titulo: "Ejercicio de disciplina del trader",
+        url: "https://ejemplo.com/ejercicio-disciplina"
+      }
+    ],
+
+    meta: {
+      tipo: contexto.tipo,
+      entidad: contexto.nombre || null,
+      timestamp: new Date().toISOString()
+    }
+  };
 }
