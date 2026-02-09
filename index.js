@@ -39,15 +39,33 @@ app.get("/", (req, res) => {
  */
 app.post("/psicotrading/public", (req, res) => {
   const { pregunta, usuario } = req.body;
+res.json({
+  perfil: tipo,
+  entidad: entidad || "general",
+  contexto_psicologico: contexto.enfoque,
+  normas: contexto.normas || contexto.normas_legales,
+  estilo: contexto.estilo_respuesta || contexto.tono_respuesta,
 
-  res.json({
-    perfil: PUBLIC_PROFILE.tipo,
-    usuario: usuario || "anonimo",
-    pregunta,
-    respuesta_simulada:
-      "Respuesta de psicotrading general basada en disciplina, gestión emocional y control del riesgo."
-  });
+  respuesta_voz:
+    "Entiendo lo que estás viviendo. Vamos a analizarlo con calma y enfoque psicológico para que tomes decisiones más sólidas.",
+
+  respuesta_texto: {
+    resumen: "Análisis psicológico del contexto actual del trader.",
+    puntos_clave: [
+      "Gestión emocional antes de operar",
+      "Disciplina según el marco establecido",
+      "Reducción de impulsividad"
+    ],
+    recursos: [
+      {
+        tipo: "ejercicio",
+        titulo: "Respiración previa a la entrada",
+        descripcion: "Ejercicio de 2 minutos antes de ejecutar una operación"
+      }
+    ]
+  }
 });
+  
 /**
  * Endpoint CONTEXTO UNIFICADO
  * Decide si es público, empresa o broker
