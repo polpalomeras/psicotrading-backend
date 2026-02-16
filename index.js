@@ -1,79 +1,52 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Psicotrading IA</title>
-<style>
-body {
-  background: #0a0a0a;
-  color: white;
-  font-family: Arial;
-  text-align: center;
-}
-#chat {
-  width: 400px;
-  height: 400px;
-  margin: 40px auto;
-  background: #1c1c1c;
-  padding: 20px;
-  overflow-y: auto;
-  border-radius: 10px;
-  text-align: left;
-}
-input {
-  width: 300px;
-  padding: 10px;
-}
-button {
-  padding: 10px 20px;
-  background: #00bcd4;
-  border: none;
-  cursor: pointer;
-}
-</style>
-</head>
-<body>
+import express from "express";
+import cors from "cors";
+import OpenAI from "openai";
 
-<h1>Psicotrading IA</h1>
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-<div id="chat"></div>
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-<input id="mensaje" placeholder="Escribe tu mensaje...">
-<button onclick="enviar()">Enviar</button>
+app.get("/", (req, res) => {
+  res.json({ status: "OK", message: "Backend activo 🚀" });
+});
 
-<script>
-async function enviar() {
-  const mensajeInput = document.getElementById("mensaje");
-  const mensaje = mensajeInput.value;
-  const chat = document.getElementById("chat");
+app.post("/psicotrading/contexto", async (req, res) => {
+  const { pregunta } = req.body;
 
-  if (!mensaje) return;
-
-  chat.innerHTML += "<p><strong>Tú:</strong> " + mensaje + "</p>";
-  mensajeInput.value = "";
+  if (!pregunta) {
+    return res.status(400).json({ error: "Falta la pregunta" });
+  }
 
   try {
-    const response = await fetch("https://TU-URL-DE-RAILWAY/psicotrading/contexto", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        pregunta: mensaje
-      })
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "Eres un psicólogo especializado en psicotrading. Responde con enfoque emocional, disciplina y gestión del riesgo."
+        },
+        {
+          role: "user",
+          content: pregunta
+        }
+      ]
     });
 
-    const data = await response.json();
+    const respuesta = completion.choices[0].message.content;
 
-    chat.innerHTML += "<p><strong>Psicólogo:</strong> " + data.respuesta + "</p>";
-
-    chat.scrollTop = chat.scrollHeight;
+    res.json({ respuesta });
 
   } catch (error) {
-    chat.innerHTML += "<p><strong>Error:</strong> No conecta con el backend</p>";
+    console.error(error);
+    res.status(500).json({ error: "Error en OpenAI" });
   }
-}
-</script>
+});
 
-</body>
-</html>
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Servidor activo en puerto", PORT);
+});
