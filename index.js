@@ -7,13 +7,15 @@ app.use(cors());
 app.use(express.json());
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+// 🔹 Healthcheck
 app.get("/", (req, res) => {
   res.json({ status: "OK", message: "Backend activo 🚀" });
 });
 
+// 🔹 Endpoint psicotrading
 app.post("/psicotrading/contexto", async (req, res) => {
   const { pregunta } = req.body;
 
@@ -27,22 +29,22 @@ app.post("/psicotrading/contexto", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "Eres un psicólogo especializado en psicotrading. Responde con enfoque emocional, disciplina y gestión del riesgo."
+          content:
+            "Eres un psicólogo experto en psicotrading. Ayuda al trader a gestionar emociones, disciplina y riesgo. No des asesoramiento financiero directo.",
         },
         {
           role: "user",
-          content: pregunta
-        }
-      ]
+          content: pregunta,
+        },
+      ],
     });
 
     const respuesta = completion.choices[0].message.content;
 
     res.json({ respuesta });
-
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error en OpenAI" });
+    console.error("Error OpenAI:", error);
+    res.status(500).json({ error: "Error generando respuesta" });
   }
 });
 
