@@ -6,9 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* =========================
-   HEALTH CHECK
-========================= */
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
@@ -17,10 +14,7 @@ app.get("/", (req, res) => {
   });
 });
 
-/* =========================
-   ENDPOINT PRINCIPAL
-========================= */
-app.post("/psicotrading/contexto", (req, res) => {
+app.post("/psicotrading/contexto", async (req, res) => {
   const { pregunta } = req.body;
 
   if (!pregunta) {
@@ -29,26 +23,19 @@ app.post("/psicotrading/contexto", (req, res) => {
     });
   }
 
-  const respuesta = {
-    respuesta_voz:
-      "Entiendo lo que estás viviendo. Vamos a analizarlo con calma y enfoque psicológico para que tomes decisiones más sólidas.",
-
+  res.json({
+    respuesta_voz: "Entiendo lo que estás viviendo. Vamos a analizarlo con calma y enfoque psicológico.",
     respuesta_texto: {
       resumen: `Análisis psicológico sobre: "${pregunta}"`,
       puntos_clave: [
-        "Gestión emocional antes de operar",
-        "Respeta tu plan de trading",
-        "Evita operar por impulso"
+        "Gestión emocional",
+        "Disciplina operativa",
+        "Control de impulsividad"
       ]
     }
-  };
-
-  res.json(respuesta);
+  });
 });
 
-/* =========================
-   SERVER
-========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
