@@ -1,13 +1,15 @@
 {
   "name": "psicotrading-backend",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Backend Psicotrading IA",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "openai": "^4.52.7"
   }
 }
