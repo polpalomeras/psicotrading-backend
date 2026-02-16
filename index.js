@@ -1,6 +1,9 @@
 import express from "express";
+import cors from "cors";
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
 /**
@@ -48,14 +51,14 @@ const BROKERS = {
 
 /**
  * =========================
- * FUNCIÓN SELECTOR CONTEXTO
+ * SELECTOR CONTEXTO
  * =========================
  */
 function obtenerContexto({ tipo, entidad }) {
   if (tipo === "publico") return PUBLIC_PROFILE;
   if (tipo === "empresa") return EMPRESA_BASE;
   if (tipo === "broker" && BROKERS[entidad]) return BROKERS[entidad];
-  return PUBLIC_PROFILE; // fallback seguro
+  return PUBLIC_PROFILE;
 }
 
 /**
@@ -73,15 +76,22 @@ app.get("/", (req, res) => {
 
 /**
  * =========================
- * ENDPOINT CONTEXTO UNIFICADO
+ * ENDPOINT PRINCIPAL
  * =========================
- * Este será el endpoint principal
- * para web / app / avatar
  */
 app.post("/psicotrading/contexto", (req, res) => {
-  const { tipo, entidad, usuario, pregunta } = req.body;
+  const { tipo = "publico", entidad, usuario = "anónimo", pregunta } = req.body;
+
+  if (!pregunta) {
+    return res.status(400).json({
+      error: "Falta la pregunta"
+    });
+  }
 
   const contexto = obtenerContexto({ tipo, entidad });
+
+  const respuestaBase =
+    "Entiendo lo que estás viviendo. Vamos a analizarlo con calma y enfoque psicológico para que tomes decisiones más sólidas.";
 
   res.json({
     perfil: tipo,
@@ -89,16 +99,13 @@ app.post("/psicotrading/contexto", (req, res) => {
     enfoque: contexto.enfoque,
     normas: contexto.normas || contexto.normas_legales,
     estilo: contexto.estilo_respuesta || contexto.tono_respuesta,
-    usuario: usuario || "anónimo",
+    usuario,
     pregunta,
 
-    // RESPUESTA PARA AVATAR (VOZ)
-    respuesta_voz:
-      "Entiendo lo que estás viviendo. Vamos a analizarlo con calma y enfoque psicológico para que tomes decisiones más sólidas.",
+    respuesta_voz: respuestaBase,
 
-    // RESPUESTA PARA UI (TEXTO)
     respuesta_texto: {
-      resumen: "Análisis psicológico del contexto actual del trader.",
+      resumen: `Análisis psicológico sobre: "${pregunta}"`,
       puntos_clave: [
         "Gestión emocional antes de operar",
         "Disciplina según el marco establecido",
