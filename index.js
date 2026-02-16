@@ -10,12 +10,16 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🔹 Healthcheck
+/* =========================
+   HEALTHCHECK
+========================= */
 app.get("/", (req, res) => {
-  res.json({ status: "OK", message: "Backend activo 🚀" });
+  res.json({ status: "ok", message: "Backend activo 🚀" });
 });
 
-// 🔹 Endpoint psicotrading
+/* =========================
+   ENDPOINT PSICOTRADING
+========================= */
 app.post("/psicotrading/contexto", async (req, res) => {
   const { pregunta } = req.body;
 
@@ -42,12 +46,16 @@ app.post("/psicotrading/contexto", async (req, res) => {
     const respuesta = completion.choices[0].message.content;
 
     res.json({ respuesta });
+
   } catch (error) {
     console.error("Error OpenAI:", error);
     res.status(500).json({ error: "Error generando respuesta" });
   }
 });
 
+/* =========================
+   SERVER
+========================= */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor activo en puerto", PORT);
