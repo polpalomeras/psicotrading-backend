@@ -29,62 +29,50 @@ app.get("/", (req, res) => {
 // ===============================
 app.post("/chat", async (req, res) => {
   try {
-    const { user_id, message } = req.body;
+    const { message } = req.body;
 
-    if (!user_id || !message) {
-      return res.status(400).json({ error: "Faltan datos" });
+    if (!message || message.trim() === "") {
+      return res.status(400).json({ error: "Message is required" });
     }
 
-    // 1️⃣ Buscar conversación existente
-    let { data: conversation } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("user_id", user_id)
-      .single();
+    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.CLAVE_API_DE_OPENAI}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Eres Adrian Cole, experto en psicología del trading. Responde de forma profesional, estratégica y clara."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
 
-    // 2️⃣ Si no existe → crearla
-    if (!conversation) {
-      const { data: newConv, error } = await supabase
-        .from("conversations")
-        .insert([{ user_id }])
-        .select()
-        .single();
+    const data = await openaiResponse.json();
 
-      if (error) throw error;
-      conversation = newConv;
+    if (!data.choices) {
+      console.log("OpenAI error:", data);
+      return res.status(400).json({ error: "OpenAI error", details: data });
     }
 
-    // 3️⃣ Guardar mensaje usuario
-    await supabase.from("messages").insert([
-      {
-        conversation_id: conversation.id,
-        role: "user",
-        content: message
-      }
-    ]);
+    const reply = data.choices[0].message.content;
 
-    // 4️⃣ Traer historial
-    const { data: history } = await supabase
-      .from("messages")
-      .select("role, content")
-      .eq("conversation_id", conversation.id)
-      .order("created_at", { ascending: true });
+    res.json({ reply });
 
-    // 5️⃣ Enviar a OpenAI
-    const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: history
-        })
-      }
-    );
+  } catch (error) {
+    console.log("Server error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
     const data = await response.json();
     const assistantReply = data.choices[0].message.content;
