@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
@@ -10,14 +9,6 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
-
-// ===============================
-// SUPABASE
-// ===============================
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE
-);
 
 // ===============================
 // HEALTH CHECK
@@ -43,15 +34,15 @@ app.post("/chat", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.CLAVE_API_DE_OPENAI}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o",
           messages: [
             {
               role: "system",
               content:
-                "Eres Adrian Cole, experto en psicología del trading. Responde de forma profesional, estratégica y clara.",
+                "Eres Adrian Cole, experto en psicología del trading. Respondes con claridad, autoridad y enfoque práctico.",
             },
             {
               role: "user",
@@ -66,27 +57,16 @@ app.post("/chat", async (req, res) => {
 
     if (!data.choices || !data.choices[0]) {
       console.error("OpenAI error:", data);
-      return res.status(400).json({
-        error: "Error en respuesta de OpenAI",
-        details: data,
-      });
+      return res.status(500).json({ error: "OpenAI error" });
     }
 
     const reply = data.choices[0].message.content;
-
-    // (Opcional) Guardar mensaje en Supabase
-    await supabase.from("messages").insert([
-      {
-        role: "assistant",
-        content: reply,
-      },
-    ]);
 
     res.json({ reply });
 
   } catch (error) {
     console.error("Server error:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
