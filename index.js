@@ -1,13 +1,21 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import fetch from "node-fetch";
 
 dotenv.config();
 
 const app = express();
+
+// ===============================
+// MIDDLEWARE
+// ===============================
 app.use(cors());
 app.use(express.json());
 
+// ===============================
+// PORT
+// ===============================
 const PORT = process.env.PORT || 3000;
 
 // ===============================
@@ -60,9 +68,9 @@ app.post("/chat", async (req, res) => {
       return res.status(500).json({ error: "OpenAI error" });
     }
 
-    const reply = data.choices[0].message.content;
-
-    res.json({ reply });
+    res.json({
+      reply: data.choices[0].message.content,
+    });
 
   } catch (error) {
     console.error("Server error:", error);
