@@ -6,16 +6,9 @@ import fetch from "node-fetch";
 dotenv.config();
 
 const app = express();
-
-// ===============================
-// MIDDLEWARE
-// ===============================
 app.use(cors());
 app.use(express.json());
 
-// ===============================
-// PORT
-// ===============================
 const PORT = process.env.PORT || 3000;
 
 // ===============================
@@ -26,92 +19,84 @@ app.get("/", (req, res) => {
 });
 
 // ===============================
-// CHAT CORE (USADO POR WEB + AVATAR)
-// ===============================
-async function generarRespuesta(message) {
-  const response = await fetch(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content:
-              "Eres Adrian Cole, experto en psicología del trading. Ayudas a traders a controlar emociones, disciplina y mentalidad. Respondes con claridad, autoridad y enfoque práctico.",
-          },
-          {
-            role: "user",
-            content: message,
-          },
-        ],
-        temperature: 0.7,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!data.choices || !data.choices[0]) {
-    throw new Error("Respuesta inválida de OpenAI");
-  }
-
-  return data.choices[0].message.content;
-}
-
-// ===============================
-// CHAT ENDPOINT (WEB)
+// CHAT → OPENAI
 // ===============================
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "Message is required" });
+    if (!message) {
+      return res.status(400).json({ error: "Message required" });
     }
 
-    const reply = await generarRespuesta(message);
+    const openaiRes = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Eres Adrian Cole, experto en psicología del trading. Respondes con claridad, calma y autoridad profesional.",
+            },
+            { role: "user", content: message },
+          ],
+        }),
+      }
+    );
+
+    const data = await openaiRes.json();
+    const reply = data.choices?.[0]?.message?.content;
 
     res.json({ reply });
-  } catch (error) {
-    console.error("Chat error:", error);
-    res.status(500).json({ error: "Chat error" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "OpenAI error" });
   }
 });
 
 // ===============================
-// CHAT ENDPOINT (AVATAR 24/7)
-// LiveAvatar / Webhook ready
+// AVATAR → D-ID
 // ===============================
-app.post("/avatar/chat", async (req, res) => {
+app.post("/avatar", async (req, res) => {
   try {
-    const message =
-      req.body?.message ||
-      req.body?.text ||
-      req.body?.input ||
-      "";
+    const { text } = req.body;
 
-    if (!message) {
-      return res.json({ reply: "No he recibido ningún mensaje." });
+    if (!text) {
+      return res.status(400).json({ error: "Text required" });
     }
 
-    const reply = await generarRespuesta(message);
+    const didRes = await fetch("https://api.d-id.com/talks", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${process.env.DID_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        script: {
+          type: "text",
+          input: text,
+          provider: {
+            type: "microsoft",
+            voice_id: "es-ES-AlvaroNeural",
+          },
+        },
+        source_url:
+          "https://create-images-results.d-id.com/DefaultPresenters/Noelle_f/image.jpeg",
+      }),
+    });
 
-    // Respuesta SIMPLE (ideal para avatar voz)
-    res.json({
-      reply,
-    });
-  } catch (error) {
-    console.error("Avatar error:", error);
-    res.json({
-      reply:
-        "Ahora mismo no puedo responder, respira y vuelve a intentarlo.",
-    });
+    const data = await didRes.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "D-ID error" });
   }
 });
 
@@ -119,5 +104,5 @@ app.post("/avatar/chat", async (req, res) => {
 // START SERVER
 // ===============================
 app.listen(PORT, () => {
-  console.log(`🚀 Psicotrading backend activo en puerto ${PORT}`);
+  console.log(`Servidor activo en puerto ${PORT}`);
 });
