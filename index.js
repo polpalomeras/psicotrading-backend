@@ -62,7 +62,7 @@ app.post("/chat", async (req, res) => {
 });
 
 // ===============================
-// AVATAR → D-ID
+// AVATAR → D-ID (TALKS)
 // ===============================
 app.post("/avatar", async (req, res) => {
   try {
@@ -97,6 +97,46 @@ app.post("/avatar", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "D-ID error" });
+  }
+});
+
+// ===============================
+// 🔥 CLIENT KEY → D-ID (ESTO FALTABA)
+// ===============================
+app.get("/did/client-key", async (req, res) => {
+  try {
+    if (!process.env.DID_API_KEY) {
+      return res.status(500).json({
+        error: "DID_API_KEY no definida en Railway",
+      });
+    }
+
+    // 🔐 Base64 correcto
+    const auth = Buffer.from(process.env.DID_API_KEY).toString("base64");
+
+    const didRes = await fetch(
+      "https://api.d-id.com/agents/client-key",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          allowed_domains: [
+            "https://psicotrading-backend-production.up.railway.app",
+            "http://localhost:3000",
+          ],
+        }),
+      }
+    );
+
+    const data = await didRes.json();
+    res.json(data);
+
+  } catch (err) {
+    console.error("❌ Error Client Key D-ID:", err);
+    res.status(500).json({ error: "Error generando client key" });
   }
 });
 
